@@ -48,13 +48,16 @@ def transferTF( xmlFilepath, imgFilepath, labelGrep=""):
 
         img = cv2.imread(imgFilepath)
         org_width = img.shape[1]
+        org_height = img.shape[0]
         if(resizeImage==True):
             img = imutils.resize(img, width = resize_width)
             cv2.imwrite(imgResizedFolder + folderCharacter + img_filename + img_file_extension, img)
-            size_ratio = resize_width / org_width
+            size_ratio_w = img.shape[1] / org_width
+            size_ratio_h = img.shape[0] / org_height
         else:
             cv2.imwrite(imgResizedFolder + folderCharacter + img_filename + img_file_extension, img)
-            size_ratio = 1
+            size_ratio_w = 1
+            size_ratio_h = 1
 
         imgShape = img.shape
         img_h = imgShape[0]
@@ -79,19 +82,19 @@ def transferTF( xmlFilepath, imgFilepath, labelGrep=""):
 
         tmpArrays = labelXML.getElementsByTagName("xmin")
         for elem in tmpArrays:
-            labelXmin.append(int(int(elem.firstChild.data) * size_ratio))
+            labelXmin.append(int(int(elem.firstChild.data) * size_ratio_w))
 
         tmpArrays = labelXML.getElementsByTagName("ymin")
         for elem in tmpArrays:
-            labelYmin.append(int(int(elem.firstChild.data) * size_ratio))
+            labelYmin.append(int(int(elem.firstChild.data) * size_ratio_h))
 
         tmpArrays = labelXML.getElementsByTagName("xmax")
         for elem in tmpArrays:
-            labelXmax.append(int(int(elem.firstChild.data) * size_ratio))
+            labelXmax.append(int(int(elem.firstChild.data) * size_ratio_w))
 
         tmpArrays = labelXML.getElementsByTagName("ymax")
         for elem in tmpArrays:
-            labelYmax.append(int(int(elem.firstChild.data) * size_ratio))
+            labelYmax.append(int(int(elem.firstChild.data) * size_ratio_h))
 
         return (img_filename+img_file_extension , img_w, img_h, labelName, labelXmin, labelYmin, labelXmax, labelYmax)
 
