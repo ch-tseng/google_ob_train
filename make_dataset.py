@@ -16,16 +16,17 @@ import tensorflow as tf
 
 #--------------------------------------------------------------------
 folderCharacter = "/"  # \\ is for windows
-classList = { "b01a":0, "b01b":1, "b01c":2, "b02":3, "b03":4, "b04":5, "b05":6, "b06":7, "b07": 8, "b08": 9, "b09": 10, "b10": 11, "b11": 12 }
-xmlFolder = "/home/digits/works/pos_breads/breads_fake_POS/labels"
-imgFolder = "/home/digits/works/pos_breads/breads_fake_POS/images"
-savePath = "/home/digits/works/pos_breads/breads_fake_POS/ssd_dataset"
+#classList = { "b01a":0, "b01b":1, "b01c":2, "b02":3, "b03":4, "b04":5, "b05":6, "b06":7, "b07": 8, "b08": 9, "b09": 10, "b10": 11, "b11": 12 }
+classList = { "fingertip":0, "palm":1 }
+xmlFolder = "/home/digits/datasets/paint_on_air/labels"
+imgFolder = "/home/digits/datasets/paint_on_air/images"
+savePath = "/home/digits/works/Mobilenet.projects/paint_on_air/ssd_dataset"
 testRatio = 0.2
 recordTF_out = ("train.record", "test.record")
 recordTF_in = ("train.csv", "test.csv")
 
-resizeImage = False
-resize_width = 450
+resizeImage = True
+resize_width = 1920
 imgResizedFolder = imgFolder + "_" + str(resize_width)
 #---------------------------------------------------------------------
 
@@ -49,11 +50,18 @@ def transferTF( xmlFilepath, imgFilepath, labelGrep=""):
         img = cv2.imread(imgFilepath)
         org_width = img.shape[1]
         org_height = img.shape[0]
+
         if(resizeImage==True):
-            img = imutils.resize(img, width = resize_width)
+            if(img.shape[1]>=img.shape[0]):
+                img = imutils.resize(img, width = resize_width)
+                size_ratio_w = img.shape[1] / org_width
+                size_ratio_h = img.shape[0] / org_height
+            else:
+                img = imutils.resize(img, height = resize_width)
+                size_ratio_w = img.shape[1] / org_width
+                size_ratio_h = img.shape[0] / org_height
+
             cv2.imwrite(imgResizedFolder + folderCharacter + img_filename + img_file_extension, img)
-            size_ratio_w = img.shape[1] / org_width
-            size_ratio_h = img.shape[0] / org_height
         else:
             cv2.imwrite(imgResizedFolder + folderCharacter + img_filename + img_file_extension, img)
             size_ratio_w = 1
@@ -151,6 +159,7 @@ def create_tf_example(group, path):
     return tf_example
 
 #-------------------------------------------------
+#step 1: make train.csv / test.csv
 
 for file in os.listdir(imgFolder):
     filename, file_extension = os.path.splitext(file)
@@ -231,6 +240,7 @@ the_file.close()
 print("Total {} test records to {}".format(i, recordTF_in[1]))
 
 #----------------------------------------------------------
+#step 2: make TFRecords: train.record / test.record
 
 print("----------- Transfer to TF Record ---------------")
 
