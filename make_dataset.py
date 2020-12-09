@@ -15,24 +15,24 @@ import tensorflow as tf
 #from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 
 #--------------------------------------------------------------------
-folderCharacter = "/"  # \\ is for windows
+#folderCharacter = "/"  # \\ is for windows
 #classList = { "b01a":0, "b01b":1, "b01c":2, "b02":3, "b03":4, "b04":5, "b05":6, "b06":7, "b07": 8, "b08": 9, "b09": 10, "b10": 11, "b11": 12 }
-classList = { "fingertip":0, "palm":1 }
-xmlFolder = "/home/digits/datasets/paint_on_air/labels"
-imgFolder = "/home/digits/datasets/paint_on_air/images"
-savePath = "/home/digits/works/Mobilenet.projects/paint_on_air/ssd_dataset"
+classList = { "bad":0, "good":1, "none":2 }
+xmlFolder = "/WORK1/MyProjects/Face_Mask_wear/dataset/masks_sunplusit_outsource_all/labels"
+imgFolder = "/WORK1/MyProjects/Face_Mask_wear/dataset/masks_sunplusit_outsource_all/images"
+savePath = "/WORK1/MyProjects/Face_Mask_wear/dataset/masks_sunplusit_outsource_all/ssd_dataset"
 testRatio = 0.2
 recordTF_out = ("train.record", "test.record")
 recordTF_in = ("train.csv", "test.csv")
 
 resizeImage = True
-resize_width = 1920
+resize_width = 960
 imgResizedFolder = imgFolder + "_" + str(resize_width)
 #---------------------------------------------------------------------
 
 fileList = []
-outputTrainFile = savePath + folderCharacter + recordTF_in[0]
-outputTestFile = savePath + folderCharacter + recordTF_in[1]
+outputTrainFile = os.path.join(savePath, recordTF_in[0])
+outputTestFile = os.path.join(savePath, recordTF_in[1])
 
 if not os.path.exists(savePath):
     os.makedirs(savePath)
@@ -61,9 +61,9 @@ def transferTF( xmlFilepath, imgFilepath, labelGrep=""):
                 size_ratio_w = img.shape[1] / org_width
                 size_ratio_h = img.shape[0] / org_height
 
-            cv2.imwrite(imgResizedFolder + folderCharacter + img_filename + img_file_extension, img)
+            cv2.imwrite( os.path.join(imgResizedFolder, img_filename + img_file_extension), img)
         else:
-            cv2.imwrite(imgResizedFolder + folderCharacter + img_filename + img_file_extension, img)
+            cv2.imwrite(os.path.join(imgResizedFolder, img_filename + img_file_extension), img)
             size_ratio_w = 1
             size_ratio_h = 1
 
@@ -119,8 +119,10 @@ def split(df, group):
 
 
 def create_tf_example(group, path):
-    with tf.gfile.GFile(os.path.join(path, '{}'.format(group.filename)), 'rb') as fid:
+    print("TEST:", path, group.filename)
+    with tf.io.gfile.GFile(os.path.join(path, '{}'.format(group.filename)), 'rb') as fid:
         encoded_jpg = fid.read()
+
     encoded_jpg_io = io.BytesIO(encoded_jpg)
     image = Image.open(encoded_jpg_io)
     width, height = image.size
@@ -135,10 +137,10 @@ def create_tf_example(group, path):
     classes = []
 
     for index, row in group.object.iterrows():
-        xmins.append(row['xmin'] / width)
-        xmaxs.append(row['xmax'] / width)
-        ymins.append(row['ymin'] / height)
-        ymaxs.append(row['ymax'] / height)
+        xmins.append(int(row['xmin']) / int(width))
+        xmaxs.append(int(row['xmax']) / int(width))
+        ymins.append(int(row['ymin']) / int(height))
+        ymaxs.append(int(row['ymax']) / int(height))
         classes_text.append(row['class'].encode('utf8'))
         classes.append(class_text_to_int(row['class']))
 
@@ -170,7 +172,7 @@ for file in os.listdir(imgFolder):
         xmlFile = basename(filename) + ".xml"
         print("XML:"+xmlFile, "IMG:"+imgFile)
 
-        if(os.path.exists(xmlFolder+folderCharacter+xmlFile)):
+        if(os.path.exists(os.path.join(xmlFolder, xmlFile))):
             fileList.append(imgFile)
 
 print("total image files: ", len(fileList))
@@ -186,7 +188,7 @@ print ("Train:{} images".format(len(train_data)))
 print("Test:{} images".format(len(test_data)))
 
 
-csvFilename = savePath + folderCharacter + recordTF_in[0]
+csvFilename = os.path.join(savePath, recordTF_in[0])
 print("writeing to {}".format(csvFilename))
 
 with open(csvFilename, 'a') as the_file:
@@ -195,8 +197,8 @@ with open(csvFilename, 'a') as the_file:
 
     for id in train_data:
         base_filename = os.path.splitext(fileList[id])[0]
-        xmlpath = xmlFolder + folderCharacter + base_filename + ".xml"
-        imgpath = imgFolder + folderCharacter + fileList[id]
+        xmlpath = os.path.join(xmlFolder, base_filename + ".xml")
+        imgpath = os.path.join(imgFolder, fileList[id])
 
         (imgfile , w, h, labels, Xmin, Ymin, Xmax, Ymax) = transferTF( xmlpath, imgpath, "")
         print(imgfile , w, h, labels, Xmin, Ymin, Xmax, Ymax)
@@ -211,7 +213,7 @@ the_file.close()
 print("Total {} train records to {}".format(i, recordTF_in[0]))
 
 
-csvFilename = savePath + folderCharacter + recordTF_in[1]
+csvFilename = os.path.join(savePath, recordTF_in[1])
 print("writeing to {}".format(csvFilename))
 
 with open(csvFilename, 'a') as the_file:
@@ -220,8 +222,8 @@ with open(csvFilename, 'a') as the_file:
 
     for id in test_data:
         base_filename = os.path.splitext(fileList[id])[0]
-        xmlpath = xmlFolder + folderCharacter + base_filename + ".xml"
-        imgpath = imgFolder + folderCharacter + fileList[id]
+        xmlpath = os.path.join(xmlFolder, base_filename + ".xml")
+        imgpath = os.path.join(imgFolder, fileList[id])
 
         (imgfile , w, h, labels, Xmin, Ymin, Xmax, Ymax) = transferTF( xmlpath, imgpath, "")
         if(imgfile is not None):
@@ -246,9 +248,9 @@ print("Total {} test records to {}".format(i, recordTF_in[1]))
 print("----------- Transfer to TF Record ---------------")
 
 for i in (0, 1):
-    output_path = savePath + folderCharacter + recordTF_out[i]
-    writer = tf.python_io.TFRecordWriter(output_path)
-    examples = pd.read_csv(savePath + folderCharacter + recordTF_in[i])
+    output_path = os.path.join(savePath, recordTF_out[i])
+    writer = tf.io.TFRecordWriter(output_path)
+    examples = pd.read_csv(os.path.join(savePath, recordTF_in[i]))
     grouped = split(examples, 'filename')
 
     for group in grouped:
@@ -262,7 +264,7 @@ for i in (0, 1):
 
 print("-----------make object_detection.pbtxt -----------")
 
-filename = savePath + folderCharacter + 'object_detection.pbtxt'
+filename = os.path.join(savePath, 'object_detection.pbtxt')
 print("writeing to {}".format(filename))
 
 inv_classList = {v: k for k, v in classList.items()}
